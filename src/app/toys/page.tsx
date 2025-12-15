@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route"; // Import your options
+import { authOptions } from "@/lib/auth"; // Import your options
 import { prisma } from "@/lib/prisma"; // Import the DB connection
 
 export default async function ToysPage() {
