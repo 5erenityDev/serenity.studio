@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "SerenityDev",
     description: 'Indie Game Developer creating "Wretched Rose" and "Up to Bat!"',
     locale: "en_US",
-    url: "https://www.serenity-dev.com/",
+    url: "https://www.serenitydev.net/",
     images: [
       {
         url: "/images/site/banner.png",
