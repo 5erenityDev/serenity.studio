@@ -1,7 +1,16 @@
 import { NextAuthOptions } from "next-auth";
 import TwitchProvider from "next-auth/providers/twitch";
 
+const NOT_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? "https://www.serenitydev.net" 
+  : "https://beta.serenitydev.net";
+  
+console.log("🔥 AUTH DEBUG: BASE_URL is set to:", NOT_BASE_URL);
+
 const BASE_URL = process.env.NEXTAUTH_URL;
+
+console.log("🔥 AUTH DEBUG: BASE_URL is set to:", BASE_URL);
+
 
 export const authOptions: NextAuthOptions = {
   providers: [
