@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import LoginButton from "../components/LoginButton";
 
-export default async function ToysPage() {
+export default async function ToyboxPage() {
   // 1. Get the session
   const session = await getServerSession(authOptions);
 

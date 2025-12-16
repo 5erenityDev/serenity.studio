@@ -43,34 +43,57 @@ export async function POST(req: Request) {
   // 6. Handle the Actual Redemption Event
   if (messageType === 'notification' && payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
     const redemption = payload.event;
-    
-    const twitchUserId = redemption.user_id;
-    const twitchUserName = redemption.user_name;
-    const rewardTitle = redemption.reward.title;
-    
-    console.log(`🎁 Redemption detected: ${twitchUserName} redeemed ${rewardTitle}`);
+    const { user_id, user_name, reward } = redemption;
+    const rewardTitle = reward.title;
+
+    console.log(`🎁 Redeem: ${user_name} -> ${rewardTitle}`);
 
     try {
-      // Upsert User (Create them if they don't exist yet)
+      // 1. Ensure User Exists
       await prisma.user.upsert({
-        where: { id: twitchUserId },
-        update: { name: twitchUserName }, // Update name in case they changed it
-        create: {
-          id: twitchUserId,
-          name: twitchUserName,
-        },
+        where: { id: user_id },
+        update: { name: user_name },
+        create: { id: user_id, name: user_name },
       });
 
-      // Create the Toy
+      // ---------------------------------------------------------
+      // 2. CHECK FOR DUPLICATES (The "One Per Lifetime" Logic)
+      // ---------------------------------------------------------
+      
+      // Define which items are "Unique"
+      // You can add event plushies here later, e.g. ["Test Plush", "Halloween 2025"]
+      const uniqueItems = ["Test Plush"];
+
+      if (uniqueItems.includes(rewardTitle)) {
+        // Check if they already have it
+        const existingToy = await prisma.toy.findFirst({
+          where: {
+            userId: user_id,
+            name: rewardTitle, // Matches the exact reward name
+          },
+        });
+
+        if (existingToy) {
+          console.log(`⚠️ User ${user_name} already has ${rewardTitle}. Skipping add.`);
+          // We return 200 OK so Twitch knows we received the message.
+          // If we returned an error, Twitch would retry 5 times.
+          return new NextResponse('Duplicate Item Ignored', { status: 200 });
+        }
+      }
+
+      // ---------------------------------------------------------
+      // 3. Create the Toy (Only if they didn't have it)
+      // ---------------------------------------------------------
       await prisma.toy.create({
         data: {
-          name: rewardTitle,      // The name of the Channel Point Reward
-          type: "Channel Redeem", // Or you could parse the title to categorize it
-          userId: twitchUserId,
+          name: rewardTitle,
+          type: "Channel Redeem",
+          userId: user_id,
         },
       });
 
       return new NextResponse('Toy Added', { status: 200 });
+
     } catch (error) {
       console.error('Database Error:', error);
       return new NextResponse('Database Error', { status: 500 });
