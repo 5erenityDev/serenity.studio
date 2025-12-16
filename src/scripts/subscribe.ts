@@ -22,27 +22,45 @@ async function subscribe() {
   const { access_token } = await tokenRes.json();
 
   // 2. Send Subscription Request
-  const subRes = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
-    method: 'POST',
-    headers: {
-      'Client-ID': CLIENT_ID!,
-      'Authorization': `Bearer ${access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      type: 'channel.channel_points_custom_reward_redemption.add',
-      version: '1',
-      condition: { broadcaster_user_id: MY_BROADCASTER_ID },
-      transport: {
-        method: 'webhook',
-        callback: CALLBACK_URL,
-        secret: WEBHOOK_SECRET,
-      },
-    }),
-  });
+  // We loop through the event types we want
+  const events = [
+    'channel.channel_points_custom_reward_redemption.add', // Redeems
+    'channel.subscribe', // New Subs
+    'channel.subscription.message', // Resubs
+    'channel.cheer', // Bits
+  ];
 
-  const response = await subRes.json();
-  console.log("Twitch Response:", JSON.stringify(response, null, 2));
+  for (const type of events) {
+    console.log(`📡 Subscribing to ${type}...`);
+    
+    const subRes = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+      method: 'POST',
+      headers: {
+        // ADD THE ! HERE vvv
+        'Client-ID': CLIENT_ID!, 
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: type,
+        version: '1',
+        condition: { broadcaster_user_id: MY_BROADCASTER_ID },
+        transport: {
+          method: 'webhook',
+          callback: CALLBACK_URL,
+          secret: WEBHOOK_SECRET!, // Good habit to add it here too
+        },
+      }),
+    });
+
+    if (subRes.ok) {
+        console.log(`✅ Success: ${type}`);
+    } else {
+        const err = await subRes.json();
+        console.error(`❌ Failed: ${type}`, JSON.stringify(err, null, 2));
+    }
+  }
+
 }
 
 subscribe();
